@@ -1,0 +1,326 @@
+#1st 
+!pip install pandas openpyxl seaborn plotly
+
+#2nd
+# Step 1: Import libraries
+import pandas as pd
+import seaborn as sns
+import plotly.express as px
+import matplotlib.pyplot as plt
+
+# Step 2: Upload the Excel file
+from google.colab import files
+filename = 'Titanic-Dataset.csv'
+
+# Step 3: Load the Excel file
+df = pd.read_csv(filename)
+
+# Step 4: Display the first few rows
+df.head()
+
+#3rd
+
+# Step 6: Basic descriptive statistics
+summary = df.describe(include='all').transpose()
+summary
+
+#4th 
+
+# Step 7: Histograms
+df.hist(bins=15, figsize=(15, 10), color='skyblue', edgecolor='black')
+plt.suptitle("Histograms of Numeric Columns", fontsize=16)
+plt.tight_layout()
+plt.show()
+
+#5th 
+
+# Step 8: Boxplots
+numeric_cols = df.select_dtypes(include='number').columns
+
+plt.figure(figsize=(15, 5 * len(numeric_cols)))
+for i, col in enumerate(numeric_cols):
+    plt.subplot(len(numeric_cols), 1, i + 1)
+    sns.boxplot(x=df[col], color='lightcoral')
+    plt.title(f"Boxplot of {col}")
+plt.tight_layout()
+plt.show()
+
+#6th
+
+# prompt: Correlation heatmap
+
+# Step 9: Correlation Heatmap
+numeric_df = df.select_dtypes(include='number')
+correlation_matrix = numeric_df.corr()
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
+plt.title("Correlation Heatmap of Numeric Columns")
+plt.show()
+
+#7th 
+
+# Seaborn pairplot for pairwise relationships
+# (This can take time for large datasets — filter if needed)
+
+sns.pairplot(numeric_df, corner=True, diag_kind='kde', plot_kws={'alpha': 0.6, 's': 50})
+plt.suptitle("Pairwise Relationships Between Features", y=1.02, fontsize=16)
+plt.show()
+
+#8th 
+
+# Visualizing missing values (if any)
+import missingno as msno
+!pip install missingno
+
+msno.matrix(df)
+plt.title("Missing Data Visualization")
+plt.show()
+
+#9th 
+
+# prompt: Trend Detection (Line plots for time/date data)
+
+# Step 10: Trend Detection (Line plots for time/date data)
+# For demonstration, assuming a 'Date' column exists or we create a synthetic one
+# If your data has a date/time column, replace 'synthetic_date' with its name
+
+# Create a synthetic date column if one doesn't exist (for demonstration)
+if 'Date' not in df.columns:
+    # Assuming data is ordered by some implicit time, e.g., row index
+    df['synthetic_date'] = pd.to_datetime(pd.Series(range(len(df))), unit='D')
+    date_col = 'synthetic_date'
+else:
+    date_col = 'Date'
+    # Ensure the date column is in datetime format
+    df[date_col] = pd.to_datetime(df[date_col])
+
+
+# Sort by date if the data isn't already sorted
+df = df.sort_values(by=date_col)
+
+# Example: Plotting a numeric column against the date column
+# Replace 'Age' with the name of the numeric column you want to trend
+if 'Age' in df.columns:
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(x=date_col, y='Age', data=df, ci=None) # ci=None to remove confidence interval
+    plt.title(f"Trend of Age over Time")
+    plt.xlabel("Date")
+    plt.ylabel("Age")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+# Example: Plotting the count of occurrences over time
+df['count'] = 1
+df_by_date = df.groupby(date_col)['count'].sum().reset_index()
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(x=date_col, y='count', data=df_by_date, ci=None)
+plt.title("Count of Records Over Time")
+plt.xlabel("Date")
+plt.ylabel("Count")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# You can plot other numeric columns against date similarly
+# For example, if you have a 'Fare' column:
+if 'Fare' in df.columns:
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(x=date_col, y='Fare', data=df, ci=None)
+    plt.title("Trend of Fare over Time")
+    plt.xlabel("Date")
+    plt.ylabel("Fare")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+# Or using Plotly for interactive plots
+if 'Age' in df.columns:
+    fig = px.line(df, x=date_col, y='Age', title='Interactive Trend of Age Over Time')
+    fig.show()
+
+if 'Fare' in df.columns:
+    fig = px.line(df, x=date_col, y='Fare', title='Interactive Trend of Fare Over Time')
+    fig.show()
+
+fig_count = px.line(df_by_date, x=date_col, y='count', title='Interactive Count of Records Over Time')
+fig_count.show()
+
+#10th 
+
+from scipy import stats
+
+# Calculate Z-scores
+z_scores = stats.zscore(df.select_dtypes(include='number'))
+
+# Identify rows where any feature has a Z-score > 3 or < -3
+outliers = (abs(z_scores) > 3).any(axis=1)
+
+# Display potential outliers
+df[outliers]
+
+#11th 
+
+# prompt: Group-wise Patterns
+
+# Step 11: Group-wise Patterns
+# This step involves analyzing trends, distributions, or summaries within specific groups.
+# Common grouping variables include categorical columns like 'Pclass', 'Sex', 'Embarked', etc.
+
+# Example 1: Survival rate by Pclass
+if 'Pclass' in df.columns and 'Survived' in df.columns:
+    plt.figure(figsize=(8, 5))
+    sns.barplot(x='Pclass', y='Survived', data=df, ci=None, palette='viridis')
+    plt.title("Survival Rate by Passenger Class")
+    plt.xlabel("Passenger Class")
+    plt.ylabel("Survival Rate")
+    plt.show()
+
+# Example 2: Age distribution by Sex
+if 'Sex' in df.columns and 'Age' in df.columns:
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(x='Sex', y='Age', data=df, palette='pastel')
+    plt.title("Age Distribution by Sex")
+    plt.xlabel("Sex")
+    plt.ylabel("Age")
+    plt.show()
+
+# Example 3: Fare distribution by Embarked location
+if 'Embarked' in df.columns and 'Fare' in df.columns:
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(x='Embarked', y='Fare', data=df, palette='Set3')
+    plt.title("Fare Distribution by Embarked Location")
+    plt.xlabel("Embarked Location")
+    plt.ylabel("Fare")
+    plt.show()
+
+# Example 4: Count of passengers by Pclass and Sex
+if 'Pclass' in df.columns and 'Sex' in df.columns:
+    plt.figure(figsize=(8, 5))
+    sns.countplot(x='Pclass', hue='Sex', data=df, palette='rocket')
+    plt.title("Count of Passengers by Passenger Class and Sex")
+    plt.xlabel("Passenger Class")
+    plt.ylabel("Count")
+    plt.show()
+
+# Example 5: Using Plotly for interactive group-wise plots
+# Survival Rate by Pclass
+if 'Pclass' in df.columns and 'Survived' in df.columns:
+    fig_survival_pclass = px.bar(
+        df.groupby('Pclass')['Survived'].mean().reset_index(),
+        x='Pclass',
+        y='Survived',
+        title='Interactive Survival Rate by Passenger Class'
+    )
+    fig_survival_pclass.show()
+
+# Age Distribution by Sex
+if 'Sex' in df.columns and 'Age' in df.columns:
+    fig_age_sex = px.box(
+        df.dropna(subset=['Age', 'Sex']), # Drop rows with missing Age or Sex for boxplot
+        x='Sex',
+        y='Age',
+        title='Interactive Age Distribution by Sex'
+    )
+    fig_age_sex.show()
+
+# You can adapt these examples to other categorical variables or combinations of variables.
+# Grouping the data and calculating aggregated statistics is often a first step.
+# For example:
+# df.groupby('Pclass')['Age'].mean() # Mean age per passenger class
+# df.groupby(['Pclass', 'Sex'])['Fare'].median() # Median fare per Pclass and Sex
+
+#12th 
+
+# prompt: Clustering Trend Check
+
+# Step 12: Clustering Trend Check
+# This step involves visualizing or analyzing how data clusters might change over time or across trends.
+# Since we don't have explicit clusters defined yet, we can look at how key metrics
+# for potential clusters (like age, fare, survival) might trend over our synthetic date.
+
+# We can group data by potential cluster-related attributes (like Survived, Pclass, Sex)
+# and then plot the trends of numerical features within those groups.
+
+# Example 1: Trend of average Age over time, separated by Survival Status
+if 'Survived' in df.columns and 'Age' in df.columns and date_col in df.columns:
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(x=date_col, y='Age', hue='Survived', data=df, ci=None)
+    plt.title("Trend of Average Age Over Time by Survival Status")
+    plt.xlabel("Date")
+    plt.ylabel("Average Age")
+    plt.xticks(rotation=45)
+    plt.legend(title='Survived', labels=['No', 'Yes'])
+    plt.tight_layout()
+    plt.show()
+
+# Example 2: Trend of average Fare over time, separated by Passenger Class
+if 'Pclass' in df.columns and 'Fare' in df.columns and date_col in df.columns:
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(x=date_col, y='Fare', hue='Pclass', data=df, ci=None)
+    plt.title("Trend of Average Fare Over Time by Passenger Class")
+    plt.xlabel("Date")
+    plt.ylabel("Average Fare")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+# Example 3: Trend of the count of passengers over time, separated by Sex
+if 'Sex' in df.columns and date_col in df.columns:
+    df_by_date_sex = df.groupby([date_col, 'Sex']).size().reset_index(name='count')
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(x=date_col, y='count', hue='Sex', data=df_by_date_sex, ci=None)
+    plt.title("Count of Passengers Over Time by Sex")
+    plt.xlabel("Date")
+    plt.ylabel("Count")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+# Using Plotly for interactive versions of these plots
+if 'Survived' in df.columns and 'Age' in df.columns and date_col in df.columns:
+    fig_age_survival_trend = px.line(
+        df,
+        x=date_col,
+        y='Age',
+        color='Survived',
+        title='Interactive Trend of Age Over Time by Survival Status'
+    )
+    fig_age_survival_trend.update_layout(legend_title_text='Survived')
+    fig_age_survival_trend.show()
+
+if 'Pclass' in df.columns and 'Fare' in df.columns and date_col in df.columns:
+    fig_fare_pclass_trend = px.line(
+        df,
+        x=date_col,
+        y='Fare',
+        color='Pclass',
+        title='Interactive Trend of Fare Over Time by Passenger Class'
+    )
+    fig_fare_pclass_trend.update_layout(legend_title_text='Passenger Class')
+    fig_fare_pclass_trend.show()
+
+if 'Sex' in df.columns and date_col in df.columns:
+    fig_count_sex_trend = px.line(
+        df_by_date_sex,
+        x=date_col,
+        y='count',
+        color='Sex',
+        title='Interactive Count of Passengers Over Time by Sex'
+    )
+    fig_count_sex_trend.show()
+
+# These plots help us observe if the trends within different potential groups (defined by
+# categorical features) are similar or diverge over time. This can give hints about
+# how potential clusters might evolve or if the data structure changes over the observed period.
+
+# For formal clustering analysis (like K-Means, DBSCAN), you would typically perform
+# it on selected features at a specific point in time or over a rolling window
+# if analyzing changing clusters. The visualizations above are exploratory steps
+# to see if such changes are evident.
+
+
+
+
