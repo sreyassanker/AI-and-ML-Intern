@@ -1,0 +1,236 @@
+#1st
+
+!pip install pandas openpyxl seaborn plotly
+
+#2nd
+# Step 1: Import libraries
+import pandas as pd
+import seaborn as sns
+import plotly.express as px
+import matplotlib.pyplot as plt
+
+# Step 2: Upload the Excel file
+from google.colab import files
+filename = 'Iris.csv'
+
+# Step 3: Load the Excel file
+df = pd.read_csv(filename)
+
+# Step 4: Display the first few rows
+df.head()
+
+
+
+# Step 3: Separate features (X) and the target label (y)
+# Make sure to replace 'Label' with the actual column name in your dataset that you want to predict
+X = df.drop('Species', axis=1)  # Features (independent variables)
+y = df['Species']               # Target (dependent variable)
+
+
+
+# Step 4: Normalize the feature values using Min-Max Scaling
+from sklearn.preprocessing import MinMaxScaler
+
+scaler = MinMaxScaler()
+X_normalized = scaler.fit_transform(X)  # Scales all feature values to the range [0, 1]
+
+
+
+# Step 5: Split the data into training and testing sets
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_normalized, y, test_size=0.2, random_state=42)  # 80% training, 20% testing
+
+
+
+# Step 6: Train a classification model (e.g., Logistic Regression)
+from sklearn.linear_model import LogisticRegression
+
+model = LogisticRegression()
+model.fit(X_train, y_train)  # Train the model on the training data
+
+
+
+
+# Step 7: Make predictions and evaluate the model
+from sklearn.metrics import accuracy_score, classification_report
+
+y_pred = model.predict(X_test)  # Predict on the test data
+
+# Print accuracy and detailed classification report
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+
+
+
+# Step 8: Import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier
+
+# Step 9: Initialize the KNN classifier
+# You can change n_neighbors to try different values (e.g., 3, 5, 7)
+knn = KNeighborsClassifier(n_neighbors=5)
+
+# Step 10: Train the KNN model
+knn.fit(X_train, y_train)
+
+
+
+# Step 11: Predict using the trained KNN model
+y_pred_knn = knn.predict(X_test)
+
+
+
+# Step 12: Evaluate the KNN model
+from sklearn.metrics import accuracy_score, classification_report
+
+# Print accuracy
+print("KNN Accuracy:", accuracy_score(y_test, y_pred_knn))
+
+# Print classification report
+print("KNN Classification Report:")
+print(classification_report(y_test, y_pred_knn))
+
+
+
+# Step 13: Test different values of K (1 to 20)
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score
+
+# Store accuracy scores for each value of k
+k_values = list(range(1, 21))
+accuracy_scores = []
+
+for k in k_values:
+    knn = KNeighborsClassifier(n_neighbors=k)  # Create model with current k
+    knn.fit(X_train, y_train)                  # Train the model
+    y_pred_k = knn.predict(X_test)            # Predict on test set
+    acc = accuracy_score(y_test, y_pred_k)    # Calculate accuracy
+    accuracy_scores.append(acc)               # Save accuracy score
+
+# Step 14: Plot k vs. accuracy
+plt.figure(figsize=(10, 5))
+plt.plot(k_values, accuracy_scores, marker='o', linestyle='-', color='b')
+plt.title('K Value vs Accuracy')
+plt.xlabel('Number of Neighbors (K)')
+plt.ylabel('Accuracy')
+plt.xticks(k_values)
+plt.grid(True)
+plt.show()
+
+
+
+# Optional: Retrain with best k (e.g., if best k is 7)
+best_k = 7
+knn_best = KNeighborsClassifier(n_neighbors=best_k)
+knn_best.fit(X_train, y_train)
+
+
+
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Step 15: Retrain the model with the best K
+best_k = 7  # Replace this with your chosen value
+knn_best = KNeighborsClassifier(n_neighbors=best_k)
+knn_best.fit(X_train, y_train)
+
+# Step 16: Predict on the test set
+y_pred_best = knn_best.predict(X_test)
+
+# Step 17: Evaluate the model using accuracy
+accuracy = accuracy_score(y_test, y_pred_best)
+print("Accuracy with K =", best_k, ":", accuracy)
+
+# Step 18: Compute confusion matrix
+conf_matrix = confusion_matrix(y_test, y_pred_best)
+print("Confusion Matrix:")
+print(conf_matrix)
+
+# Step 19: Visualize the confusion matrix
+plt.figure(figsize=(6, 4))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues')
+plt.title(f'Confusion Matrix (K = {best_k})')
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.show()
+
+# Step 20: Optional - Classification report
+print("Classification Report:")
+print(classification_report(y_test, y_pred_best))
+
+
+
+from sklearn.decomposition import PCA
+
+# Reduce features to 2D for visualization
+pca = PCA(n_components=2)
+X_train_2d = pca.fit_transform(X_train)
+X_test_2d = pca.transform(X_test)
+
+
+
+
+knn_2d = KNeighborsClassifier(n_neighbors=best_k)
+knn_2d.fit(X_train_2d, y_train)
+
+
+
+
+
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import LabelEncoder
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns # Import seaborn for scatter plot
+
+# Reduce features to 2D for visualization
+pca = PCA(n_components=2)
+X_train_2d = pca.fit_transform(X_train)
+X_test_2d = pca.transform(X_test)
+
+# Encode the target variable to numerical labels
+label_encoder = LabelEncoder()
+y_train_encoded = label_encoder.fit_transform(y_train)
+y_test_encoded = label_encoder.transform(y_test) # Also encode the test set labels for plotting
+
+# Train KNN model on the 2D data with encoded labels
+knn_2d = KNeighborsClassifier(n_neighbors=best_k)
+knn_2d.fit(X_train_2d, y_train_encoded)
+
+# Create a mesh grid over the feature space
+h = 0.01  # step size in the mesh
+
+x_min, x_max = X_train_2d[:, 0].min() - 1, X_train_2d[:, 0].max() + 1
+y_min, y_max = X_train_2d[:, 1].min() - 1, X_train_2d[:, 1].max() + 1
+
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                     np.arange(y_min, y_max, h))
+
+# Predict class for each point in the mesh (predictions will be numerical)
+Z = knn_2d.predict(np.c_[xx.ravel(), yy.ravel()])
+Z = Z.reshape(xx.shape)
+
+# Plot the contour and training examples
+plt.figure(figsize=(10, 6))
+# Use the encoded labels for contour plotting
+plt.contourf(xx, yy, Z, alpha=0.4, cmap=plt.cm.RdYlBu)
+
+# Plot training points using encoded labels for coloring
+scatter = plt.scatter(X_train_2d[:, 0], X_train_2d[:, 1], c=y_train_encoded, cmap=plt.cm.RdYlBu, edgecolor='k')
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.title(f'Decision Boundaries with KNN (k={best_k})')
+
+# Create custom legend for the encoded classes
+# Get the unique class names from the original y_train
+unique_labels = label_encoder.classes_
+handles, _ = scatter.legend_elements()
+legend_labels = [f'{i}: {label}' for i, label in enumerate(unique_labels)]
+plt.legend(handles, legend_labels, title="Classes")
+
+
+plt.show()
+
