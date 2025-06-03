@@ -1,0 +1,156 @@
+#1st 
+
+#!pip install pandas openpyxl seaborn plotly
+# Step 1: Import libraries
+import pandas as pd
+import seaborn as sns
+import plotly.express as px
+import matplotlib.pyplot as plt
+
+# Step 2: Upload the Excel file
+from google.colab import files
+filename = 'data.csv'
+
+# Step 3: Load the Excel file
+df = pd.read_csv(filename)
+
+# Step 4: Display the first few rows
+df.head()
+
+#2nd 
+
+
+# Drop unnecessary columns
+df = df.drop(['id', 'Unnamed: 32'], axis=1)
+
+# Encode target variable (M = 1, B = 0)
+df['diagnosis'] = df['diagnosis'].map({'M': 1, 'B': 0})
+
+# 3rd 
+
+from sklearn.model_selection import train_test_split
+
+X = df.drop('diagnosis', axis=1)
+y = df['diagnosis']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+#4th 
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+#5th 
+
+import matplotlib.pyplot as plt
+
+feature_importances = pd.Series(model.feature_importances_, index=X.columns)
+feature_importances.nlargest(10).plot(kind='barh')
+plt.title('Top 10 Important Features')
+plt.show()
+
+
+#6th 
+
+# Optional: Get model coefficients and intercept
+# RandomForestClassifier does not have coef_ or intercept_ attributes
+# print("Model coefficients:", model.coef_)
+# print("Model intercept:", model.intercept_)
+
+# Optional: Predict probabilities (useful for ROC curves or threshold tuning)
+y_prob = model.predict_proba(X_test)[:, 1]
+
+# Optional: Plot ROC curve and calculate AUC
+from sklearn.metrics import roc_curve, roc_auc_score
+import matplotlib.pyplot as plt
+
+fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+auc_score = roc_auc_score(y_test, y_prob)
+
+plt.figure()
+plt.plot(fpr, tpr, label=f"ROC curve (AUC = {auc_score:.2f})")
+plt.plot([0, 1], [0, 1], 'k--')  # diagonal line
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+# Correct the title to reflect the actual model used
+plt.title("ROC Curve for Random Forest")
+plt.legend(loc="lower right")
+plt.show()
+
+#7th 
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
+
+# Standardize features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Fit Logistic Regression
+model = LogisticRegression(random_state=42, max_iter=1000)
+model.fit(X_train, y_train)
+
+# Predict and evaluate
+y_pred = model.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+#8th 
+
+import numpy as np
+from sklearn.metrics import precision_score, recall_score
+
+# Get predicted probabilities for class 1
+y_prob = model.predict_proba(X_test)[:, 1]
+
+# Define your custom threshold (example: 0.3)
+threshold = 0.3
+
+# Predict labels based on custom threshold
+y_pred_custom = (y_prob >= threshold).astype(int)
+
+# Evaluate with new threshold
+precision = precision_score(y_test, y_pred_custom)
+recall = recall_score(y_test, y_pred_custom)
+
+print(f"Using threshold = {threshold}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall: {recall:.4f}")
+
+# 9th 
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import precision_score, recall_score
+
+# Predicted probabilities for class 1
+y_prob = model.predict_proba(X_test)[:, 1]
+
+thresholds = np.arange(0, 1.01, 0.01)
+precisions = []
+recalls = []
+
+for thresh in thresholds:
+    y_pred_thresh = (y_prob >= thresh).astype(int)
+    precisions.append(precision_score(y_test, y_pred_thresh))
+    recalls.append(recall_score(y_test, y_pred_thresh))
+
+plt.figure(figsize=(8, 6))
+plt.plot(thresholds, precisions, label='Precision', color='blue')
+plt.plot(thresholds, recalls, label='Recall', color='green')
+plt.xlabel('Threshold')
+plt.ylabel('Score')
+plt.title('Precision and Recall vs. Classification Threshold')
+plt.legend()
+plt.grid(True)
+plt.show()
+
