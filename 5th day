@@ -1,0 +1,235 @@
+#1st
+
+!pip install pandas openpyxl seaborn plotly
+
+#2nd
+# Step 1: Import libraries
+import pandas as pd
+import seaborn as sns
+import plotly.express as px
+import matplotlib.pyplot as plt
+
+# Step 2: Upload the Excel file
+from google.colab import files
+filename = 'heart.csv'
+
+# Step 3: Load the Excel file
+df = pd.read_csv(filename)
+
+# Step 4: Display the first few rows
+df.head()
+
+#2nd
+
+
+# Example: assuming last column is the target
+X = df.iloc[:, :-1]
+y = df.iloc[:, -1]
+
+#3rd
+
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+
+# Split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the model
+clf = DecisionTreeClassifier()
+clf.fit(X_train, y_train)
+
+#4th
+
+
+from sklearn.tree import plot_tree
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(20,10))
+plot_tree(clf, filled=True, feature_names=X.columns, class_names=True, rounded=True)
+plt.show()
+
+#5th
+
+
+accuracy = clf.score(X_test, y_test)
+print(f"Model Accuracy: {accuracy:.2f}")
+
+#6th
+
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score
+
+train_accuracies = []
+test_accuracies = []
+depths = range(1, 21)
+
+for depth in depths:
+    clf = DecisionTreeClassifier(max_depth=depth, random_state=42)
+    clf.fit(X_train, y_train)
+    
+    train_acc = accuracy_score(y_train, clf.predict(X_train))
+    test_acc = accuracy_score(y_test, clf.predict(X_test))
+    
+    train_accuracies.append(train_acc)
+    test_accuracies.append(test_acc)
+
+# Plot accuracy vs depth
+plt.figure(figsize=(10, 5))
+plt.plot(depths, train_accuracies, label='Train Accuracy', marker='o')
+plt.plot(depths, test_accuracies, label='Test Accuracy', marker='o')
+plt.xlabel('Tree Depth')
+plt.ylabel('Accuracy')
+plt.title('Overfitting Analysis: Accuracy vs Tree Depth')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+#7th 
+
+# Use best depth from above plot (e.g., 4)
+best_depth = 4
+clf = DecisionTreeClassifier(max_depth=best_depth, random_state=42)
+clf.fit(X_train, y_train)
+
+# Visualize again with limited depth
+plt.figure(figsize=(20, 10))
+plot_tree(clf, filled=True, feature_names=X.columns, class_names=True, rounded=True)
+plt.title(f"Decision Tree with max_depth={best_depth}")
+plt.show()
+
+
+#8th
+
+clf = DecisionTreeClassifier(max_depth=4, min_samples_leaf=5, min_samples_split=10)
+
+#9th 
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+# Train Random Forest
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+# Predict
+rf_train_preds = rf.predict(X_train)
+rf_test_preds = rf.predict(X_test)
+
+# Accuracy
+rf_train_acc = accuracy_score(y_train, rf_train_preds)
+rf_test_acc = accuracy_score(y_test, rf_test_preds)
+
+print(f"Random Forest Train Accuracy: {rf_train_acc:.2f}")
+print(f"Random Forest Test Accuracy: {rf_test_acc:.2f}")
+
+#10th 
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.tree import DecisionTreeClassifier # Ensure DecisionTreeClassifier is imported here as well
+
+# Train Random Forest
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+# Predict
+rf_train_preds = rf.predict(X_train)
+rf_test_preds = rf.predict(X_test)
+
+# Accuracy
+rf_train_acc = accuracy_score(y_train, rf_train_preds)
+rf_test_acc = accuracy_score(y_test, rf_test_preds)
+
+print(f"Random Forest Train Accuracy: {rf_train_acc:.2f}")
+print(f"Random Forest Test Accuracy: {rf_test_acc:.2f}")
+
+# Create and FIT the Decision Tree Classifier instance you want to evaluate
+dt_clf = DecisionTreeClassifier(max_depth=4, min_samples_leaf=5, min_samples_split=10)
+dt_clf.fit(X_train, y_train) # Fit the Decision Tree model
+
+# Now use the fitted dt_clf for prediction
+dt_train_preds = dt_clf.predict(X_train)
+dt_test_preds = dt_clf.predict(X_test)
+
+dt_train_acc = accuracy_score(y_train, dt_train_preds)
+dt_test_acc = accuracy_score(y_test, dt_test_preds)
+
+print(f"\nDecision Tree Train Accuracy: {dt_train_acc:.2f}")
+print(f"Decision Tree Test Accuracy: {dt_test_acc:.2f}")
+
+#11th 
+
+
+import pandas as pd
+
+comparison = pd.DataFrame({
+    'Model': ['Decision Tree', 'Random Forest'],
+    'Train Accuracy': [dt_train_acc, rf_train_acc],
+    'Test Accuracy': [dt_test_acc, rf_test_acc]
+})
+
+print("\nModel Accuracy Comparison:")
+print(comparison)
+
+#12th 
+
+
+# Get feature importances
+importances = rf.feature_importances_
+feature_names = X.columns
+
+# Create a DataFrame for easy viewing
+importances_df = pd.DataFrame({
+    'Feature': feature_names,
+    'Importance': importances
+}).sort_values(by='Importance', ascending=False)
+
+print(importances_df)
+
+
+#13th 
+
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x='Importance', y='Feature', data=importances_df, palette='viridis')
+plt.title('Feature Importances from Random Forest')
+plt.xlabel('Relative Importance')
+plt.ylabel('Features')
+plt.tight_layout()
+plt.show()
+
+
+#14th 
+
+
+from sklearn.model_selection import cross_val_score
+
+# Decision Tree Cross-Validation
+dt_scores = cross_val_score(clf, X, y, cv=5)
+print(f"Decision Tree CV Accuracy: {dt_scores.mean():.2f} ± {dt_scores.std():.2f}")
+
+# Random Forest Cross-Validation
+rf_scores = cross_val_score(rf, X, y, cv=5)
+print(f"Random Forest CV Accuracy: {rf_scores.mean():.2f} ± {rf_scores.std():.2f}")
+
+
+#15th 
+
+
+cv_comparison = pd.DataFrame({
+    'Model': ['Decision Tree', 'Random Forest'],
+    'CV Mean Accuracy': [dt_scores.mean(), rf_scores.mean()],
+    'CV Std Dev': [dt_scores.std(), rf_scores.std()]
+})
+
+print("\nCross-Validation Comparison:")
+print(cv_comparison)
+
+
+
+
