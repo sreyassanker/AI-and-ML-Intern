@@ -1,0 +1,253 @@
+#1st
+!pip install pandas openpyxl seaborn plotly
+
+#2nd
+# Step 1: Import libraries
+import pandas as pd
+import seaborn as sns
+import plotly.express as px
+import matplotlib.pyplot as plt
+
+# Step 2: Upload the Excel file
+from google.colab import files
+filename = 'breast-cancer.csv'
+
+# Step 3: Load the Excel file
+df = pd.read_csv(filename)
+
+# Step 4: Display the first few rows
+df.head()
+
+
+
+# Encode 'diagnosis' column (M = 1, B = 0)
+from sklearn.preprocessing import LabelEncoder
+
+df['diagnosis'] = LabelEncoder().fit_transform(df['diagnosis'])
+
+# Define features and target
+X = df.drop(columns=['diagnosis'])
+y = df['diagnosis']
+
+
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
+# Encode target
+from sklearn.preprocessing import LabelEncoder
+df['diagnosis'] = LabelEncoder().fit_transform(df['diagnosis'])
+
+# Features and target
+X = df.drop(columns=['diagnosis'])
+y = df['diagnosis']
+
+# Standardize
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+# SVM Linear
+svm_linear = SVC(kernel='linear')
+svm_linear.fit(X_train, y_train)
+y_pred_linear = svm_linear.predict(X_test)
+
+# SVM RBF
+svm_rbf = SVC(kernel='rbf')
+svm_rbf.fit(X_train, y_train)
+y_pred_rbf = svm_rbf.predict(X_test)
+
+# Evaluation
+print("Linear Kernel")
+print(confusion_matrix(y_test, y_pred_linear))
+print(classification_report(y_test, y_pred_linear))
+
+print("RBF Kernel")
+print(confusion_matrix(y_test, y_pred_rbf))
+print(classification_report(y_test, y_pred_rbf))
+
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.svm import SVC
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.model_selection import train_test_split
+
+# Step 1: Use only 2 features for visualization
+# Example: 'radius_mean' and 'texture_mean'
+X = df[['radius_mean', 'texture_mean']]
+y = df['diagnosis']  # already encoded as 0 and 1
+
+# Step 2: Standardize
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Step 3: Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+# Step 4: Train SVM (use linear or rbf kernel)
+svm_model = SVC(kernel='linear')  # You can change to 'rbf'
+svm_model.fit(X_train, y_train)
+
+# Step 5: Plot decision boundary
+def plot_decision_boundary(X, y, model, title):
+    h = 0.02  # step size in the mesh
+
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+
+    plt.figure(figsize=(10,6))
+    plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.coolwarm, edgecolors='k')
+    plt.xlabel('radius_mean (scaled)')
+    plt.ylabel('texture_mean (scaled)')
+    plt.title(title)
+    plt.show()
+
+# Step 6: Call the function
+plot_decision_boundary(X_scaled, y, svm_model, "SVM Decision Boundary (Linear Kernel)")
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.svm import SVC
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.model_selection import train_test_split
+
+# Step 1: Use only 2 features for visualization
+# Example: 'radius_mean' and 'texture_mean'
+X = df[['radius_mean', 'texture_mean']]
+y = df['diagnosis']  # already encoded as 0 and 1
+
+# Step 2: Standardize
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Step 3: Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+# Step 4: Train SVM (use linear or rbf kernel)
+svm_model = SVC(kernel='rbf')  # You can change to 'rbf'
+svm_model.fit(X_train, y_train)
+
+# Step 5: Plot decision boundary
+def plot_decision_boundary(X, y, model, title):
+    h = 0.02  # step size in the mesh
+
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+
+    plt.figure(figsize=(10,6))
+    plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.coolwarm, edgecolors='k')
+    plt.xlabel('radius_mean (scaled)')
+    plt.ylabel('texture_mean (scaled)')
+    plt.title(title)
+    plt.show()
+
+# Step 6: Call the function
+plot_decision_boundary(X_scaled, y, svm_model, "SVM Decision Boundary (Linear Kernel)")
+
+
+from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
+
+# Step 1: Define parameter grid
+param_grid = {
+    'C': [0.1, 1, 10, 100],       # regularization
+    'gamma': [1, 0.1, 0.01, 0.001],  # kernel coefficient
+    'kernel': ['rbf']             # keep 'rbf' kernel for tuning
+}
+
+# Step 2: Set up GridSearchCV
+grid = GridSearchCV(SVC(), param_grid, refit=True, verbose=1, cv=5)
+grid.fit(X_train, y_train)
+
+# Step 3: Show best parameters and best score
+print("Best Parameters:", grid.best_params_)
+print("Best Cross-Validation Accuracy:", grid.best_score_)
+
+# Step 4: Predict and evaluate on test set using best model
+y_pred = grid.predict(X_test)
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
+
+
+
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+results = pd.DataFrame(grid.cv_results_)
+# Explicitly name the arguments for the pivot method
+scores_matrix = results.pivot(index="param_C", columns="param_gamma", values="mean_test_score")
+
+plt.figure(figsize=(8,6))
+sns.heatmap(scores_matrix, annot=True, cmap="YlGnBu")
+plt.title("Grid Search Accuracy (RBF Kernel)")
+plt.xlabel("Gamma")
+plt.ylabel("C")
+plt.show()
+
+
+
+
+from sklearn.model_selection import cross_val_score
+from sklearn.svm import SVC
+
+# Use the best parameters (example: from GridSearch)
+best_svm = SVC(C=grid.best_params_['C'],
+               gamma=grid.best_params_['gamma'],
+               kernel='rbf')
+
+# Perform 5-fold cross-validation
+cv_scores = cross_val_score(best_svm, X_scaled, y, cv=5, scoring='accuracy')
+
+# Print scores for each fold
+print("Cross-validation scores for each fold:", cv_scores)
+
+# Mean and std of scores
+print(f"\nMean Accuracy: {cv_scores.mean():.4f}")
+print(f"Standard Deviation: {cv_scores.std():.4f}")
+
+
+
+
+model = SVC(kernel='rbf', C=1, gamma=0.1)  # example values
+cv_scores = cross_val_score(model, X_scaled, y, cv=5, scoring='accuracy')
+
+
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.boxplot(cv_scores)
+plt.title("Cross-Validation Accuracy Distribution")
+plt.xlabel("SVM Model (RBF Kernel)")
+plt.show()
+
+
