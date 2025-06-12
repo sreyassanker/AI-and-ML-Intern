@@ -1,0 +1,239 @@
+!unzip -o "/content/archive (7).zip" -d "/content/mask_dataset"
+
+# Add this after the unzip command to inspect the directory structure
+!ls -R /content/mask_dataset
+
+# Step 1: Unzip the dataset (overwrite if files already exist)
+!unzip -o "/content/archive (7).zip" -d "/content/mask_dataset"
+
+# Step 2: Check contents
+!ls /content/mask_dataset
+
+# Step 3: Import libraries
+import os
+import cv2
+import numpy as np
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.utils import to_categorical
+
+# Step 4: Prepare data
+data = []
+labels = []
+
+img_size = 100  # Resize all to 100x100
+data_path = '/content/mask_dataset/images'  # Adjust if path is different
+
+# Single class: 'with_mask' only, so label will always be 0
+class_num = 0
+
+# Load and preprocess images
+for img_name in os.listdir(data_path):
+    try:
+        img_path = os.path.join(data_path, img_name)
+        img_array = cv2.imread(img_path)
+        gray_img = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
+        resized_img = cv2.resize(gray_img, (img_size, img_size))
+        data.append(resized_img)
+        labels.append(class_num)
+    except Exception as e:
+        print(f"Error processing image {img_name}: {e}")
+        pass
+
+# Step 5: Convert to NumPy arrays and normalize
+if data:
+    X = np.array(data).reshape(-1, img_size, img_size, 1) / 255.0
+    y = to_categorical(np.array(labels), num_classes=1)  # Only one class
+
+    # Step 6: Train-test split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    print("✅ Data loaded and split successfully.")
+    print(f"Training samples: {len(X_train)}, Testing samples: {len(X_test)}")
+else:
+    print("❌ No data was loaded. Check image paths and contents.")
+
+
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.callbacks import EarlyStopping
+import matplotlib.pyplot as plt
+
+# Input shape from your preprocessing
+input_shape = (100, 100, 1)
+
+# Build the CNN
+model = Sequential([
+    Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
+    MaxPooling2D(2, 2),
+
+    Conv2D(64, (3, 3), activation='relu'),
+    MaxPooling2D(2, 2),
+
+    Conv2D(128, (3, 3), activation='relu'),
+    MaxPooling2D(2, 2),
+
+    Flatten(),
+    Dropout(0.5),
+    Dense(64, activation='relu'),
+    Dense(1, activation='sigmoid')  # Binary output
+])
+
+# Compile the model
+model.compile(optimizer='adam',
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+# Print model summary
+model.summary()
+
+# Train the model
+early_stop = EarlyStopping(patience=3, restore_best_weights=True)
+
+history = model.fit(
+    X_train, y_train,
+    epochs=10,
+    validation_data=(X_test, y_test),
+    callbacks=[early_stop]
+)
+
+
+
+# Plot accuracy
+plt.plot(history.history['accuracy'], label='train accuracy')
+plt.plot(history.history['val_accuracy'], label='val accuracy')
+plt.title('Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+# Plot loss
+plt.plot(history.history['loss'], label='train loss')
+plt.plot(history.history['val_loss'], label='val loss')
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+
+loss, accuracy = model.evaluate(X_test, y_test)
+print(f"Test Accuracy: {accuracy * 100:.2f}%")
+
+
+model.save("mask_model.h5")
+
+
+pip install opencv-python
+
+
+import cv2
+import numpy as np
+from tensorflow.keras.models import load_model
+
+# Load the trained model
+model = load_model("mask_model.h5")
+
+# Set input size same as training
+IMG_SIZE = 100
+
+# Start webcam
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Convert to grayscale to match 1-channel input
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Resize to match model input
+    resized = cv2.resize(gray, (IMG_SIZE, IMG_SIZE))
+    normalized = resized / 255.0
+    reshaped = normalized.reshape(1, IMG_SIZE, IMG_SIZE, 1)
+
+    # Predict
+    prediction = model.predict(reshaped)[0][0]
+
+    # Assign label
+    label = "With Mask" if prediction > 0.5 else "No Mask"
+
+    # Display label on frame
+    cv2.putText(frame, label, (30, 50),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 2)
+
+    cv2.imshow("Mask Detection", frame)
+
+    # Press 'q' to quit
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+
+
+import cv2
+import numpy as np
+from tensorflow.keras.models import load_model
+
+# Load the mask detection model
+model = load_model("mask_model.h5")
+
+# Load Haar cascade for face detection
+face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+
+# Set input size
+IMG_SIZE = 100
+
+# Start webcam
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Convert frame to grayscale (for face detection and model)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Detect faces
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+
+    for (x, y, w, h) in faces:
+        # Draw rectangle around face
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+        # Get face ROI
+        face_roi = gray[y:y + h, x:x + w]
+
+        try:
+            # Preprocess face for prediction
+            resized = cv2.resize(face_roi, (IMG_SIZE, IMG_SIZE))
+            normalized = resized / 255.0
+            reshaped = normalized.reshape(1, IMG_SIZE, IMG_SIZE, 1)
+
+            # Predict using model
+            prediction = model.predict(reshaped)[0][0]
+
+            label = "With Mask" if prediction > 0.5 else "No Mask"
+            color = (0, 255, 0) if label == "With Mask" else (0, 0, 255)
+
+            # Display label
+            cv2.putText(frame, label, (x, y - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+        except Exception as e:
+            print("Error in face preprocessing:", e)
+
+    # Show frame
+    cv2.imshow("Real-Time Mask Detection", frame)
+
+    # Quit on 'q'
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+
+
+
